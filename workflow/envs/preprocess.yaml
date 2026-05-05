@@ -9,3 +9,4 @@ dependencies:
   - plink2
   - r-base
   - r-tidyverse
+  - r-ggrepel

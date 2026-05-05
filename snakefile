@@ -2,7 +2,7 @@ configfile: "config.yaml"
 CHRS = config["chrs"]
 
 wildcard_constraints:
-        chr     = r"chr\d+",  # chromosome names like chr2, chr6
+        chr     = r"chr\d+",  # chromosome names like chr19, chr21
 rule all:
     input: 
         expand(
@@ -10,9 +10,16 @@ rule all:
             chr=CHRS,
             ext=['', '.tbi']
         ),
-        "data/1kg_phase3_samples.tsv"
+        expand(
+            "outputs/{chr}/pca.png",
+            chr=CHRS
+        ),
+        "data/1kg_phase3_samples.tsv",
 
 rule download_1kg:
+    """
+    Downloads chromosome-specific VCF files with wget from the 1000Genomes public FTP server.
+    """
     output:
         vcf="data/1kg_{chr}.vcf.gz",
         tbi="data/1kg_{chr}.vcf.gz.tbi"
@@ -30,6 +37,9 @@ rule download_1kg:
         """
 
 rule download_sample_pop_sheet:
+    """
+    Downloads the 1000Genomes population assignment sheet (to be used as classifier labels) from the FTP server.
+    """
     output:
         "data/1kg_phase3_samples.tsv"
     params:
@@ -57,6 +67,9 @@ rule extract_sample_list:
         """
 
 rule extract_biallelic_test_SNPs:
+    """
+    Filters downloaded VCFs to just biallelic segregating SNPs; in effect this filters the data to only the most informative loci, which saves storage, memory, compute, training time, etc.
+    """
     input:
         vcf="data/1kg_{chr}.vcf.gz",
         tbi="data/1kg_{chr}.vcf.gz.tbi"
@@ -76,3 +89,53 @@ rule extract_biallelic_test_SNPs:
         bcftools filter -Oz --include 'INFO/AC > 0 && INFO/AC < INFO/AN' --threads {threads} > {output.vcf}
         bcftools index --tbi {output.vcf}
         """
+
+rule make_plink_fileset:
+    """
+    Converts chr-specific VCFs to plink format for downstream plink-based processing.
+    """
+    input: 
+        vcf = "data/1kg_{chr}_biallelic_segregating.vcf.gz",
+        index = "data/1kg_{chr}_biallelic_segregating.vcf.gz.tbi"
+    output: 
+        multiext("data/{chr}/plink", ".pgen", ".pvar", ".psam")
+    params:
+        out_prefix = "data/{chr}/plink"
+    resources:
+        mem = "2G",
+        runtime = 5
+    conda: "workflow/envs/preprocess.yaml"
+    shell: 
+        """
+        mkdir -p data/plink
+        plink2 --vcf {input.vcf} --make-pgen --out {params.out_prefix}
+        """
+
+rule compute_pca:
+    input: 
+        multiext("data/{chr}/plink", ".pgen", ".pvar", ".psam")
+    output: 
+        proj = "data/{chr}/plink.eigenvec",
+        loadings = "data/{chr}/plink.eigenval"
+    params:
+        prefix = "data/{chr}/plink"
+    resources:
+        mem = "2G",
+        runtime = 45
+    conda: "workflow/envs/preprocess.yaml"
+    shell: 
+        """
+        plink2 --pfile {params.prefix} --pca --out {params.prefix}
+        """
+
+rule plot_pca:
+    input: 
+        proj = "data/{chr}/plink.eigenvec",
+        variance = "data/{chr}/plink.eigenval",
+        sample_pops = "data/1kg_phase3_samples.tsv"
+    output: 
+        pca_plot = "outputs/{chr}/pca.png"
+    params:
+        outlier_threshold_sd = 5
+    conda: "workflow/envs/preprocess.yaml"
+    script: "scripts/plot_pca.R"
