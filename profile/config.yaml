@@ -1,0 +1,8 @@
+executor: slurm 
+cores: 120 
+jobs: 120 
+use-conda: true
+default-resources:
+    slurm_account: pi-yuvalsim
+    slurm_partition: caslake
+    runtime: 15

@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - bcftools
+  - htslib
+  - plink2
+  - r-base
+  - r-tidyverse
