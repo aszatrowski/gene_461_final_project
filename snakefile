@@ -1,4 +1,5 @@
-CHRS = ["chr19", "chr21"]
+configfile: "config.yaml"
+CHRS = config["chrs"]
 
 wildcard_constraints:
         chr     = r"chr\d+",  # chromosome names like chr2, chr6
@@ -62,6 +63,7 @@ rule extract_biallelic_test_SNPs:
     output:
         vcf="data/1kg_{chr}_biallelic_segregating.vcf.gz",
         tbi="data/1kg_{chr}_biallelic_segregating.vcf.gz.tbi"
+    log: "logs/extract_biallelic_test_SNPs.{chr}.log"
     conda: "workflow/envs/preprocess.yaml"
     threads: 8
     resources:
