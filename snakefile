@@ -11,7 +11,7 @@ rule all:
             ext=['', '.tbi']
         ),
         expand(
-            "outputs/{chr}/pca.png",
+            "outputs/pca_{chr}.png",
             chr=CHRS
         ),
         "data/1kg_phase3_samples.tsv",
@@ -129,13 +129,95 @@ rule compute_pca:
         """
 
 rule plot_pca:
-    input: 
+    input:
         proj = "data/{chr}/plink.eigenvec",
         variance = "data/{chr}/plink.eigenval",
         sample_pops = "data/1kg_phase3_samples.tsv"
-    output: 
-        pca_plot = "outputs/{chr}/pca.png"
+    output:
+        pca_plot = "outputs/pca_{chr}.png"
     params:
         outlier_threshold_sd = 5
     conda: "workflow/envs/preprocess.yaml"
     script: "scripts/plot_pca.R"
+
+
+rule export_genotypes:
+    """
+    Exports plink binary genotypes to a dosage text matrix (.raw) after MAF filtering.
+    Also writes a filtered variant info file (.pvar) whose rows match the .raw columns.
+    """
+    input:
+        multiext("data/{chr}/plink", ".pgen", ".pvar", ".psam")
+    output:
+        raw  = "data/{chr}/genotypes.raw",
+        pvar = "data/{chr}/genotypes.pvar"
+    params:
+        in_prefix  = "data/{chr}/plink",
+        out_prefix = "data/{chr}/genotypes",
+        maf        = config["maf_threshold"]
+    conda: "workflow/envs/preprocess.yaml"
+    resources:
+        mem_mb  = 4000,
+        runtime = 30
+    shell:
+        """
+        plink2 --pfile {params.in_prefix} \
+            --maf {params.maf} \
+            --max-alleles 2 \
+            --export A \
+            --make-just-pvar \
+            --out {params.out_prefix}
+        """
+
+
+rule prepare_training_data:
+    """
+    Reads per-chromosome dosage matrices and population labels, performs an
+    individual-stratified train/val/test split, and writes a single HDF5 dataset.
+    """
+    input:
+        raw     = expand("data/{chr}/genotypes.raw",  chr=config["chrs"]),
+        pvar    = expand("data/{chr}/genotypes.pvar", chr=config["chrs"]),
+        samples = "data/1kg_phase3_samples.tsv"
+    output:
+        "data/dataset.h5"
+    conda: "workflow/envs/ml.yaml"
+    resources:
+        mem_mb  = 16000,
+        runtime = 60
+    script: "scripts/prepare_data.py"
+
+
+rule simulate_admixed:
+    """
+    Creates synthetic 2-way admixed individuals from test-split reference
+    individuals for local ancestry inference evaluation.
+    """
+    input:
+        "data/dataset.h5"
+    output:
+        "data/admixed_test.h5"
+    conda: "workflow/envs/ml.yaml"
+    resources:
+        mem_mb  = 8000,
+        runtime = 20
+    script: "scripts/simulate_admixed.py"
+
+
+rule evaluate_model:
+    """
+    Evaluates a trained CNN checkpoint: confusion matrix on held-out test windows
+    and LAI karyogram on simulated admixed individuals.
+    """
+    input:
+        dataset    = "data/dataset.h5",
+        admixed    = "data/admixed_test.h5",
+        checkpoint = "models/best_model.pt"
+    output:
+        confusion = "outputs/confusion_matrix.png",
+        karyogram = "outputs/lai_karyogram.png"
+    conda: "workflow/envs/ml.yaml"
+    resources:
+        mem_mb  = 8000,
+        runtime = 30
+    script: "scripts/evaluate.py"
