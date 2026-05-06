@@ -2,12 +2,22 @@ library(ggplot2)
 library(ggrepel)
 set.seed(1) # ggrepel reproducibility
 
-sample_pops <- readr::read_tsv(snakemake@input$sample_pops, show_col_types = FALSE)
-projections <- readr::read_tsv(snakemake@input$proj, show_col_types = FALSE) |>
+sample_pops <- readr::read_tsv(
+  snakemake@input$sample_pops,
+  show_col_types = FALSE
+)
+projections <- readr::read_tsv(
+  snakemake@input$proj,
+  show_col_types = FALSE
+) |>
   dplyr::inner_join(sample_pops, by = c("#IID" = "sample")) |>
   dplyr::mutate(pop = as.factor(pop))
 
-variance <- readr::read_tsv(snakemake@input$variance, col_names = c("PC_var_explained"), show_col_types = FALSE)
+variance <- readr::read_tsv(
+  snakemake@input$variance,
+  col_names = c("PC_var_explained"),
+  show_col_types = FALSE
+)
 outlier_threshold_sd <- snakemake@params$outlier_threshold_sd
 
 projections <- dplyr::mutate(
