@@ -67,3 +67,26 @@ population. Two natural framings:
 
 ## Project Notes
 * `prepare_data.py`: 00:18:10 core-walltime on chr21, 23.85 GB used
+
+## Training log
+First pass:
+```
+Loaded checkpoint from epoch 25 (val_acc=0.5696)
+Evaluating on test-split windows ...
+Test window accuracy: 0.5681
+              precision    recall  f1-score   support
+
+         AFR       0.83      0.87      0.85     33660
+         AMR       0.31      0.19      0.24     17680
+         EAS       0.60      0.69      0.64     25840
+         EUR       0.46      0.54      0.50     25840
+         SAS       0.38      0.32      0.35     24820
+
+    accuracy                           0.57    127840
+   macro avg       0.52      0.52      0.52    127840
+weighted avg       0.55      0.57      0.56    127840
+
+Saved confusion matrix → /content/drive/MyDrive/gene461/confusion_matrix.png
+Generating LAI karyogram ...
+Saved LAI karyogram → /content/drive/MyDrive/gene461/lai_karyogram.png
+```

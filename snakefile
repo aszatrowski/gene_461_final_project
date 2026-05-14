@@ -9,7 +9,8 @@ rule all:
             "outputs/pca_{chr}.png",
             chr=CHRS
         ),
-        "data/dataset.h5"
+        "data/dataset.h5",
+        "data/admixed_test.h5"
 
 
 rule download_1kg:
