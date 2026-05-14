@@ -1,4 +1,4 @@
-chrs: ["chr19", "chr21"]
+chrs: ["chr21"]
 maf_threshold: 0.01
 val_frac: 0.15
 test_frac: 0.15

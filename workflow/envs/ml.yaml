@@ -1,13 +1,9 @@
 name: ml
 channels:
-  - pytorch
   - conda-forge
   - defaults
 dependencies:
   - python=3.10
-  - pytorch
-  - torchvision
-  - cpuonly
   - numpy
   - pandas
   - h5py

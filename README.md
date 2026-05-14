@@ -1,14 +1,6 @@
-# Deep Learning in Genomics Final Project
+# Deep Learning in Genomics Final Project: Ancestry classifier on 1kG
 *Austin Szatrowski*
 
-## Candidate projects
-
-Two main directions under consideration. Notes below capture the data landscape, a
-sketch of the modeling approach, and the main risks for each.
-
----
-
-### Option 1 — Ancestry classifier on 1kG / HGDP
 
 **Task.** Given a phased haplotype (or genotype) window, predict the source
 population. Two natural framings:
@@ -73,30 +65,5 @@ population. Two natural framings:
 - Big windows = big input tensors; needs care with batching and possibly
   variant pruning (LD-prune or MAF filter) before training.
 
----
-
-## Recommendation
-
-If the goal is a clean, defensible course project that demonstrates CNN
-mechanics and shows up well against principled baselines: **Option 1, scoped
-to LAI on simulated admixed individuals using the HGDP+1kG callset.** Lower
-risk, controllable scope, easy to write up, and the per-chromosome /
-window-size axis gives a real ablation story.
-
-If the goal is to engage with an open problem and you are willing to absorb
-extra biology + data-wrangling cost: **Option 2, framed around the
-unseen-epitope generalization gap** rather than chasing AUC. This is
-genuinely interesting but the most likely "result" is a careful negative
-finding — be sure that is acceptable for the class deliverable before
-committing.
-
-Open questions to resolve before picking:
-- Is the deliverable a paper-style writeup, a poster, or working code?
-- Is there a compute budget (single GPU? cluster?)?
-- Does the class reward novelty or careful methodology?
-
-## Other ideas (parked)
-- Variant effect prediction in a specific cellular context (needs a concrete
-  context + readout — too vague as stated).
-- CNN for immune activation from pathogen + TCR — same data problems as
-  Option 2; not a separate project.
+## Project Notes
+* `prepare_data.py`: 00:18:10 core-walltime on chr21, 23.85 GB used

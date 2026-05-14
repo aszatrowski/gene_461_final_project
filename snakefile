@@ -9,10 +9,7 @@ rule all:
             "outputs/pca_{chr}.png",
             chr=CHRS
         ),
-        expand(
-            "data/{chr}/genotypes.{ext}",
-            chr=CHRS, ext = ["raw", "pvar"]
-        ),
+        "data/dataset.h5"
 
 
 rule download_1kg:
@@ -180,9 +177,10 @@ rule prepare_training_data:
         samples = "data/1kg_phase3_samples.tsv"
     output:
         "data/dataset.h5"
+    benchmark: "benchmarks/prepare_data.txt"
     conda: "workflow/envs/ml.yaml"
     resources:
-        mem_mb  = 16000,
+        mem = "28G",
         runtime = 60
     script: "scripts/prepare_data.py"
 
@@ -207,6 +205,10 @@ rule evaluate_model:
     """
     Evaluates a trained CNN checkpoint: confusion matrix on held-out test windows
     and LAI karyogram on simulated admixed individuals.
+
+    NOTE: torch is NOT in ml.yaml to avoid disk-quota issues on HPC.
+    Run this rule only after activating an environment that has torch installed,
+    or run scripts/evaluate.py directly on Colab (preferred — see notebooks/colab_train.ipynb).
     """
     input:
         dataset    = "data/dataset.h5",
