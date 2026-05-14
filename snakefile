@@ -9,6 +9,11 @@ rule all:
             "outputs/pca_{chr}.png",
             chr=CHRS
         ),
+        expand(
+            "data/{chr}/genotypes.{ext}",
+            chr=CHRS, ext = ["raw", "pvar"]
+        ),
+
 
 rule download_1kg:
     """
