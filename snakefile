@@ -6,15 +6,9 @@ wildcard_constraints:
 rule all:
     input: 
         expand(
-            "data/1kg_{chr}_biallelic_segregating.vcf.gz{ext}",
-            chr=CHRS,
-            ext=['', '.tbi']
-        ),
-        expand(
             "outputs/pca_{chr}.png",
             chr=CHRS
         ),
-        "data/1kg_phase3_samples.tsv",
 
 rule download_1kg:
     """
