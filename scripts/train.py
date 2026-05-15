@@ -37,22 +37,26 @@ from model import AncestryClassifier, SUPERPOP_NAMES
 # Architecture encoding
 # ---------------------------------------------------------------------------
 
-def parse_conv_arch(arch_str: str) -> tuple[list[int], list[int]]:
+def parse_conv_arch(arch_str: str) -> tuple[list[int], list[int], list[int]]:
     """
-    Parse a compact architecture string into channel and kernel lists.
+    Parse a compact architecture string into channel, kernel, and dilation lists.
 
-    Format: "c1,c2,..._k1,k2,..."
-    Example: "32,64_7,5" -> ([32, 64], [7, 5])
+    Format: "c1,c2,..._k1,k2,...[_d1,d2,...]"
+    Examples:
+        "32,64_7,5"        -> ([32, 64], [7, 5], [1, 1])
+        "32,64_7,5_1,4"    -> ([32, 64], [7, 5], [1, 4])
+        "64,128_7,7_1,16"  -> ([64, 128], [7, 7], [1, 16])
     """
-    channels_str, kernels_str = arch_str.split("_")
-    channels = [int(x) for x in channels_str.split(",")]
-    kernels  = [int(x) for x in kernels_str.split(",")]
-    if len(channels) != len(kernels):
+    parts = arch_str.split("_")
+    channels  = [int(x) for x in parts[0].split(",")]
+    kernels   = [int(x) for x in parts[1].split(",")]
+    dilations = [int(x) for x in parts[2].split(",")] if len(parts) > 2 else [1] * len(channels)
+    if not (len(channels) == len(kernels) == len(dilations)):
         raise ValueError(
-            f"conv_arch '{arch_str}': channels ({len(channels)}) and "
-            f"kernels ({len(kernels)}) must have the same length."
+            f"conv_arch '{arch_str}': channels ({len(channels)}), "
+            f"kernels ({len(kernels)}), and dilations ({len(dilations)}) must match."
         )
-    return channels, kernels
+    return channels, kernels, dilations
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +157,7 @@ def run_training(cfg: dict, data_h5: str, output_path: str | None, device) -> fl
     cfg keys:
         window_size, lr, epochs, batch_size, num_workers,
         conv_channels (list[int]), kernel_sizes (list[int]),
+        dilation_rates (list[int], optional), global_pool (bool, optional),
         dropout (float), use_wandb (bool)
 
     output_path=None skips saving the checkpoint (used during sweep trials).
@@ -182,10 +187,12 @@ def run_training(cfg: dict, data_h5: str, output_path: str | None, device) -> fl
     )
 
     model = AncestryClassifier(
-        window_size=cfg["window_size"],
-        conv_channels=cfg["conv_channels"],
-        kernel_sizes=cfg["kernel_sizes"],
-        dropout=cfg.get("dropout", 0.3),
+        window_size    = cfg["window_size"],
+        conv_channels  = cfg["conv_channels"],
+        kernel_sizes   = cfg["kernel_sizes"],
+        dilation_rates = cfg.get("dilation_rates", None),
+        dropout        = cfg.get("dropout", 0.3),
+        global_pool    = cfg.get("global_pool", False),
     ).to(device)
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"  params: {n_params:,}", flush=True)
@@ -238,13 +245,15 @@ def run_training(cfg: dict, data_h5: str, output_path: str | None, device) -> fl
                 os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
                 torch.save(
                     {
-                        "epoch":         epoch,
-                        "state_dict":    model.state_dict(),
-                        "val_acc":       val_acc,
-                        "window_size":   cfg["window_size"],
-                        "conv_channels": cfg["conv_channels"],
-                        "kernel_sizes":  cfg["kernel_sizes"],
-                        "dropout":       cfg.get("dropout", 0.3),
+                        "epoch":          epoch,
+                        "state_dict":     model.state_dict(),
+                        "val_acc":        val_acc,
+                        "window_size":    cfg["window_size"],
+                        "conv_channels":  cfg["conv_channels"],
+                        "kernel_sizes":   cfg["kernel_sizes"],
+                        "dilation_rates": cfg.get("dilation_rates", None),
+                        "dropout":        cfg.get("dropout", 0.3),
+                        "global_pool":    cfg.get("global_pool", False),
                     },
                     output_path,
                 )
@@ -266,29 +275,33 @@ def main():
     parser.add_argument("--data",        required=True,  help="Path to dataset.h5")
     parser.add_argument("--output",      default="models/best_model.pt")
     parser.add_argument("--conv-arch",   default="32,64_7,5",
-                        help='Architecture string, e.g. "32,64_7,5" or "64,128,256_7,5,3"')
+                        help='Architecture string, e.g. "32,64_7,5_1,4" (channels_kernels_dilations)')
     parser.add_argument("--window-size", type=int,   default=500)
     parser.add_argument("--epochs",      type=int,   default=25)
     parser.add_argument("--batch-size",  type=int,   default=512)
     parser.add_argument("--lr",          type=float, default=1e-3)
     parser.add_argument("--dropout",     type=float, default=0.3)
     parser.add_argument("--num-workers", type=int,   default=4)
+    parser.add_argument("--global-pool", action="store_true",
+                        help="Use global average pooling (decouples architecture from window size)")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}", flush=True)
 
-    channels, kernels = parse_conv_arch(args.conv_arch)
+    channels, kernels, dilations = parse_conv_arch(args.conv_arch)
     cfg = {
-        "window_size":   args.window_size,
-        "lr":            args.lr,
-        "epochs":        args.epochs,
-        "batch_size":    args.batch_size,
-        "num_workers":   args.num_workers,
-        "conv_channels": channels,
-        "kernel_sizes":  kernels,
-        "dropout":       args.dropout,
-        "use_wandb":     False,
+        "window_size":    args.window_size,
+        "lr":             args.lr,
+        "epochs":         args.epochs,
+        "batch_size":     args.batch_size,
+        "num_workers":    args.num_workers,
+        "conv_channels":  channels,
+        "kernel_sizes":   kernels,
+        "dilation_rates": dilations,
+        "dropout":        args.dropout,
+        "global_pool":    args.global_pool,
+        "use_wandb":      False,
     }
 
     print("Loading training data ...", flush=True)

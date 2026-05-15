@@ -72,7 +72,14 @@ for out_path in (confusion_out, karyogram_out):
 # ---------------------------------------------------------------------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ckpt   = torch.load(ckpt_path, map_location=device)
-model  = AncestryClassifier(window_size=window_size).to(device)
+model  = AncestryClassifier(
+    window_size    = ckpt.get("window_size",    window_size),
+    conv_channels  = ckpt.get("conv_channels",  (32, 64)),
+    kernel_sizes   = ckpt.get("kernel_sizes",   (7, 5)),
+    dilation_rates = ckpt.get("dilation_rates", None),
+    dropout        = ckpt.get("dropout",        0.3),
+    global_pool    = ckpt.get("global_pool",    False),
+).to(device)
 model.load_state_dict(ckpt["state_dict"])
 model.eval()
 print(f"Loaded checkpoint from epoch {ckpt['epoch']} (val_acc={ckpt['val_acc']:.4f})")
