@@ -142,3 +142,52 @@ best from `wandb` runs:
 ```
 
 `lively-sweep-17` was better on accuracy but doesn't have dilations that will surely be useful going forward
+
+new best, 23:25 (usual-sweep):
+```
+{
+  "lr": {
+    "value": 0.0001798367708675064
+  },
+  "_wandb": {
+    "value": {
+      "m": [],
+      "t": {
+        "1": [
+          1
+        ],
+        "2": [
+          1
+        ],
+        "3": [
+          2,
+          14,
+          62
+        ],
+        "4": "3.12.13",
+        "5": "0.26.1",
+        "8": [
+          1,
+          12
+        ],
+        "12": "0.26.1",
+        "13": "linux-x86_64"
+      },
+      "cli_version": "0.26.1",
+      "python_version": "3.12.13"
+    }
+  },
+  "dropout": {
+    "value": 0.4734405376290487
+  },
+  "conv_arch": {
+    "value": "32,64,128_7,7,7_1,4,16"
+  },
+  "global_pool": {
+    "value": false
+  },
+  "window_size": {
+    "value": 5000
+  }
+}
+```
