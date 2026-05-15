@@ -232,3 +232,6 @@ New best (`val_acc = 0.81`):
   }
 }
 ```
+
+For LAI test, might want to try both 5kb, 10kb, and 20kb models, since 20 might be too long for local ancestry.
+Also of note: 32-64 with no dilations is stubbornly good, but comes at the cost of compute.
