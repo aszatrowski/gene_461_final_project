@@ -90,3 +90,55 @@ Saved confusion matrix → /content/drive/MyDrive/gene461/confusion_matrix.png
 Generating LAI karyogram ...
 Saved LAI karyogram → /content/drive/MyDrive/gene461/lai_karyogram.png
 ```
+
+best from `wandb` runs:
+`balmy-sweep-16`:
+```
+{
+  "lr": {
+    "value": 0.001301064979142684
+  },
+  "_wandb": {
+    "value": {
+      "m": [],
+      "t": {
+        "1": [
+          1
+        ],
+        "2": [
+          1
+        ],
+        "3": [
+          2,
+          14,
+          62
+        ],
+        "4": "3.12.13",
+        "5": "0.26.1",
+        "8": [
+          1,
+          12
+        ],
+        "12": "0.26.1",
+        "13": "linux-x86_64"
+      },
+      "cli_version": "0.26.1",
+      "python_version": "3.12.13"
+    }
+  },
+  "dropout": {
+    "value": 0.1378284030110427
+  },
+  "conv_arch": {
+    "value": "32,64_7,7_1,4"
+  },
+  "global_pool": {
+    "value": false
+  },
+  "window_size": {
+    "value": 2000
+  }
+}
+```
+
+`lively-sweep-17` was better on accuracy but doesn't have dilations that will surely be useful going forward
