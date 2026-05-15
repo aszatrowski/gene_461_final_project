@@ -13,15 +13,7 @@ population. Two natural framings:
 **Data.**
 - **1000 Genomes (1kG).** Public FTP at `ftp.1000genomes.ebi.ac.uk`. Phase 3
   release: ~2,504 individuals, 26 populations, 5 super-populations
-  (AFR/AMR/EAS/EUR/SAS). Phased VCFs per chromosome. The NYGC 30x recall is
-  also public and gives ~3,202 samples with related individuals.
-- **HGDP.** Public — Stanford/CEPH originally; the cleanest modern source is
-  the gnomAD HGDP+1kG harmonized callset (gs://gcp-public-data--gnomad and
-  via the gnomAD downloads page). ~929 individuals across ~54 populations,
-  much finer geographic resolution than 1kG, but small per-population sample
-  sizes (often <30) which makes per-population classification brittle.
-- Recommended starting point: **HGDP+1kG harmonized callset** (gnomAD v3.1)
-  — it solves the joint-calling and label-harmonization problem for free.
+  (AFR/AMR/EAS/EUR/SAS). Phased VCFs per chromosome. 
 
 **Model sketch.**
 - Encode each SNP as a 0/1 (haploid) or 0/1/2 dosage; alternatively one-hot
@@ -182,6 +174,55 @@ new best, 23:25 (usual-sweep):
   },
   "conv_arch": {
     "value": "32,64,128_7,7,7_1,4,16"
+  },
+  "global_pool": {
+    "value": false
+  },
+  "window_size": {
+    "value": 5000
+  }
+}
+```
+
+New best (`val_acc = 0.81`):
+```
+{
+  "lr": {
+    "value": 0.0002963535898395063
+  },
+  "_wandb": {
+    "value": {
+      "m": [],
+      "t": {
+        "1": [
+          1
+        ],
+        "2": [
+          1
+        ],
+        "3": [
+          2,
+          14,
+          62
+        ],
+        "4": "3.12.13",
+        "5": "0.26.1",
+        "8": [
+          1,
+          12
+        ],
+        "12": "0.26.1",
+        "13": "linux-x86_64"
+      },
+      "cli_version": "0.26.1",
+      "python_version": "3.12.13"
+    }
+  },
+  "dropout": {
+    "value": 0.10330932751211558
+  },
+  "conv_arch": {
+    "value": "64,128,256_7,7,7_1,8,32"
   },
   "global_pool": {
     "value": false
