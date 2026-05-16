@@ -233,5 +233,9 @@ New best (`val_acc = 0.81`):
 }
 ```
 
-For LAI test, might want to try both 5kb, 10kb, and 20kb models, since 20 might be too long for local ancestry.
-Also of note: 32-64 with no dilations is stubbornly good, but comes at the cost of compute.
+* For LAI test, might want to try both 5kb, 10kb, and 20kb models, since 20 might be too long for local ancestry.
+* Also of note: 32-64 with no dilations is stubbornly good (though only with window of 20k). These are much more lightweight and train in about half the time. 
+  * here, the final linear layer is doing the spatial integration, which has an ERF of the whole window (all the regular convolutions!)
+* For repro:
+  * save the checkpoints to the repo
+  * snakemake: download data, preprocess, to HDF5, load checkpoints, forward pass, produce outputs
