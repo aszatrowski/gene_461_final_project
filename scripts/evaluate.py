@@ -227,62 +227,66 @@ for pop_a, pop_b in ANCESTRY_PAIRS:
         show_indices.append(int(matches[0]))
 n_show = len(show_indices)
 
+NROWS, NCOLS = 2, 3  # for future chromosomes, need to make this adaptive. 2x3 for slide convenience
+
 fig, axes = plt.subplots(
-    # for future chromosomes, need to make this adaptive. 2x3 for slide convenience
-    nrows = 2,
-    ncols = 3,
-    figsize=(5 * len(admixed_chrs), 3 * n_show),
+    nrows=NROWS,
+    ncols=NCOLS,
+    figsize=(5 * NCOLS, 3 * NROWS),
     squeeze=False
 )
 
-for row, ind_idx in enumerate(show_indices):
+chr_name = admixed_chrs[0]
+pos = positions[chr_name]
+
+for flat_idx, ind_idx in enumerate(show_indices):
+    row, col = flat_idx // NCOLS, flat_idx % NCOLS
+    ax = axes[row][col]
     pop_a, pop_b = int(parent_pops[ind_idx, 0]), int(parent_pops[ind_idx, 1])
     title = f"Simulated {SUPERPOP_NAMES[pop_a]}+{SUPERPOP_NAMES[pop_b]}"
 
-    for col, chr_name in enumerate(admixed_chrs):
-        ax = axes[row][col]
-        geno  = admixed_genos[chr_name][ind_idx]    # (n_snps,)
-        tract = admixed_tracts[chr_name][ind_idx]   # (n_snps,)
-        pos   = positions[chr_name]                 # (n_snps,) in bp
+    geno  = admixed_genos[chr_name][ind_idx]
+    tract = admixed_tracts[chr_name][ind_idx]
 
-        probs = sliding_window_probs(geno, stride)  # (n_windows, 5)
-        n_snps = len(geno)
-        starts = list(range(0, n_snps - window_size + 1, stride))
-        window_mid_pos = pos[np.array(starts) + window_size // 2] / 1e6  # → Mb
+    probs = sliding_window_probs(geno, stride)  # (n_windows, 5)
+    n_snps = len(geno)
+    starts = list(range(0, n_snps - window_size + 1, stride))
+    window_mid_pos = pos[np.array(starts) + window_size // 2] / 1e6  # → Mb
 
-        # Plot per-class probability curves
-        for cls_idx in range(N_CLASSES):
-            ax.plot(
-                window_mid_pos, probs[:, cls_idx],
-                color=SUPERPOP_COLORS[cls_idx],
-                lw=1.2, alpha=0.85,
-                label=SUPERPOP_NAMES[cls_idx],
-            )
+    # Plot per-class probability curves
+    for cls_idx in range(N_CLASSES):
+        ax.plot(
+            window_mid_pos, probs[:, cls_idx],
+            color=SUPERPOP_COLORS[cls_idx],
+            lw=1.2, alpha=0.85,
+            label=SUPERPOP_NAMES[cls_idx],
+        )
 
-        # Shade ground-truth ancestry tracts
-        crossover_snp = int(admixed_crossovers[chr_name][ind_idx])
-        if 0 < crossover_snp < n_snps:
-            crossover_mb = pos[crossover_snp] / 1e6
-            ax.axvspan(pos[0] / 1e6, crossover_mb,
-                       color=SUPERPOP_COLORS[pop_a], alpha=0.08)
-            ax.axvspan(crossover_mb, pos[-1] / 1e6,
-                       color=SUPERPOP_COLORS[pop_b], alpha=0.08)
-            ax.axvline(crossover_mb, color="black", lw=1.0, ls="--", label="crossover")
+    # Shade ground-truth ancestry tracts
+    crossover_snp = int(admixed_crossovers[chr_name][ind_idx])
+    if 0 < crossover_snp < n_snps:
+        crossover_mb = pos[crossover_snp] / 1e6
+        ax.axvspan(pos[0] / 1e6, crossover_mb,
+                   color=SUPERPOP_COLORS[pop_a], alpha=0.08)
+        ax.axvspan(crossover_mb, pos[-1] / 1e6,
+                   color=SUPERPOP_COLORS[pop_b], alpha=0.08)
+        ax.axvline(crossover_mb, color="black", lw=1.0, ls="--", label="crossover")
 
-        ax.set_ylim(-0.05, 1.05)
-        ax.set_xlabel(f"{chr_name} Position (Mb)")
-        ax.set_ylabel("P(ancestry)")
-        if col == 0:
-            ax.set_title(f"{title}", fontsize=9)
-        else:
-            ax.set_title(chr_name, fontsize=9)
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_xlabel(f"{chr_name} Position (Mb)")
+    ax.set_ylabel("P(ancestry)")
+    ax.set_title(title, fontsize=9)
 
-        if row == 0 and col == len(admixed_chrs) - 1:
-            handles = [
-                mpatches.Patch(color=SUPERPOP_COLORS[i], label=SUPERPOP_NAMES[i])
-                for i in range(N_CLASSES)
-            ]
-            ax.legend(handles=handles, fontsize=7, loc="upper right")
+    if row == 0 and col == NCOLS - 1:
+        handles = [
+            mpatches.Patch(color=SUPERPOP_COLORS[i], label=SUPERPOP_NAMES[i])
+            for i in range(N_CLASSES)
+        ]
+        ax.legend(handles=handles, fontsize=7, loc="upper right")
+
+# Hide unused cells
+for flat_idx in range(n_show, NROWS * NCOLS):
+    axes[flat_idx // NCOLS][flat_idx % NCOLS].set_visible(False)
 
 fig.suptitle("Local ancestry inference — simulated admixed individuals", y=1.01)
 fig.tight_layout()
