@@ -11,8 +11,6 @@ rule all:
         ),
         "data/dataset.h5",
         "data/admixed_test.h5",
-        "outputs/confusion_matrix.png",
-        "outputs/lai_karyogram.png"
 
 
 rule download_1kg:
@@ -168,7 +166,6 @@ rule export_genotypes:
             --out {params.out_prefix}
         """
 
-
 rule prepare_training_data:
     """
     Reads per-chromosome dosage matrices and population labels, performs an
@@ -202,27 +199,3 @@ rule simulate_admixed:
         mem_mb  = 8000,
         runtime = 20
     script: "scripts/simulate_admixed.py"
-
-
-rule evaluate_model:
-    """
-    Evaluates a trained CNN checkpoint: confusion matrix on held-out test windows
-    and LAI karyogram on simulated admixed individuals.
-
-    NOTE: torch is NOT in ml.yaml to avoid disk-quota issues on HPC.
-    Run this rule only after activating an environment that has torch installed,
-    or run scripts/evaluate.py directly on Colab (preferred — see notebooks/colab_train.ipynb).
-    """
-    input:
-        dataset    = "data/dataset.h5",
-        admixed    = "data/admixed_test.h5",
-        checkpoint = "models/model_a_undilated_20k.pt"
-    output:
-        confusion = "outputs/confusion_matrix.png",
-        karyogram = "outputs/lai_karyogram.png"
-    conda: "workflow/envs/ml.yaml"
-    resources:
-        mem_mb  = 8000,
-        runtime = 30,
-        slurm_partition = "gpu"
-    script: "scripts/evaluate.py"

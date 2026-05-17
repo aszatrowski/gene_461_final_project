@@ -61,7 +61,7 @@ for pop_a, pop_b in ANCESTRY_PAIRS:
         )
         continue
 
-    rng = np.random.default_rng(seed=pop_a * pop_b)
+    rng = np.random.default_rng(seed=pop_a + 100 * pop_b)
     sel_a = rng.choice(idx_a, size=n_per_pair, replace=len(idx_a) < n_per_pair)
     sel_b = rng.choice(idx_b, size=n_per_pair, replace=len(idx_b) < n_per_pair)
 
