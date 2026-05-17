@@ -47,6 +47,7 @@ try:
     ckpt_path      = snakemake.input.checkpoint
     confusion_out  = snakemake.output.confusion
     karyogram_out  = snakemake.output.karyogram
+    f1_bar_out     = snakemake.output.f1_bar
     window_size    = snakemake.config.get("window_size", 500)
 except NameError:
     parser = argparse.ArgumentParser()
@@ -55,6 +56,7 @@ except NameError:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--confusion",  default="outputs/confusion_matrix.png")
     parser.add_argument("--karyogram",  default="outputs/lai_karyogram.png")
+    parser.add_argument("--f1-bar",     default="outputs/f1_bar.png")
     parser.add_argument("--window-size", type=int, default=500)
     args = parser.parse_args()
     data_path     = args.data
@@ -62,9 +64,10 @@ except NameError:
     ckpt_path     = args.checkpoint
     confusion_out = args.confusion
     karyogram_out = args.karyogram
+    f1_bar_out    = args.f1_bar
     window_size   = args.window_size
 
-for out_path in (confusion_out, karyogram_out):
+for out_path in (confusion_out, karyogram_out, f1_bar_out):
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -144,6 +147,11 @@ all_preds = np.array(all_preds)
 all_true  = np.array(all_true)
 acc       = (all_preds == all_true).mean()
 print(f"Test window accuracy: {acc:.4f}", flush=True)
+report = classification_report(
+    all_true, all_preds,
+    target_names=[SUPERPOP_NAMES[i] for i in range(N_CLASSES)],
+    output_dict=True,
+)
 print(classification_report(
     all_true, all_preds,
     target_names=[SUPERPOP_NAMES[i] for i in range(N_CLASSES)],
@@ -168,6 +176,23 @@ fig.tight_layout()
 fig.savefig(confusion_out, dpi=150)
 plt.close(fig)
 print(f"Saved confusion matrix → {confusion_out}", flush=True)
+
+pop_names  = [SUPERPOP_NAMES[i] for i in range(N_CLASSES)]
+f1_scores  = [report[name]["f1-score"] for name in pop_names]
+colors     = [SUPERPOP_COLORS[i] for i in range(N_CLASSES)]
+
+fig, ax = plt.subplots(figsize=(4, 10))
+ax.barh(pop_names, f1_scores, color=colors)
+ax.invert_yaxis()
+ax.set_xlim(0, 1)
+ax.set_xlabel("F1 score")
+ax.set_title(f"Per-population F1\n(acc={acc:.3f})")
+for i, v in enumerate(f1_scores):
+    ax.text(v + 0.01, i, f"{v:.3f}", va="center", fontsize=9)
+fig.tight_layout()
+fig.savefig(f1_bar_out, dpi=150)
+plt.close(fig)
+print(f"Saved F1 bar plot → {f1_bar_out}", flush=True)
 
 # ---------------------------------------------------------------------------
 # 2.  LAI karyogram on simulated admixed individuals
