@@ -205,17 +205,25 @@ with h5py.File(data_path, "r") as f:
 with h5py.File(admixed_path, "r") as f:
     parent_pops = f["parent_pops"][:]
     admixed_chrs = sorted(k for k in f.keys() if k.startswith("chr"))
-    admixed_genos  = {c: f[f"{c}/genotypes"][:]   for c in admixed_chrs}
-    admixed_tracts = {c: f[f"{c}/tract_labels"][:] for c in admixed_chrs}
+    admixed_genos      = {c: f[f"{c}/genotypes"][:]        for c in admixed_chrs}
+    admixed_tracts     = {c: f[f"{c}/tract_labels"][:]     for c in admixed_chrs}
+    admixed_crossovers = {c: f[f"{c}/crossover_points"][:] for c in admixed_chrs}
 
 n_admixed = parent_pops.shape[0]
-n_show    = min(6, n_admixed)           # plot at most 6 examples
 stride    = window_size // 4            # overlapping for smooth predictions
+
+# Pick one representative per ancestry pair so the plot spans all pair types
+show_indices = []
+for pop_a, pop_b in ANCESTRY_PAIRS:
+    matches = np.where((parent_pops[:, 0] == pop_a) & (parent_pops[:, 1] == pop_b))[0]
+    if len(matches) > 0:
+        show_indices.append(int(matches[0]))
+n_show = len(show_indices)
 
 fig, axes = plt.subplots(n_show, len(admixed_chrs), figsize=(5 * len(admixed_chrs), 3 * n_show),
                          squeeze=False)
 
-for row, ind_idx in enumerate(range(n_show)):
+for row, ind_idx in enumerate(show_indices):
     pop_a, pop_b = int(parent_pops[ind_idx, 0]), int(parent_pops[ind_idx, 1])
     title = f"Simulated {SUPERPOP_NAMES[pop_a]}+{SUPERPOP_NAMES[pop_b]}"
 
@@ -240,7 +248,7 @@ for row, ind_idx in enumerate(range(n_show)):
             )
 
         # Shade ground-truth ancestry tracts
-        crossover_snp = np.searchsorted(tract, pop_b, side="left")  # first SNP of second tract
+        crossover_snp = int(admixed_crossovers[chr_name][ind_idx])
         if 0 < crossover_snp < n_snps:
             crossover_mb = pos[crossover_snp] / 1e6
             ax.axvspan(pos[0] / 1e6, crossover_mb,
