@@ -213,6 +213,13 @@ n_admixed = parent_pops.shape[0]
 stride    = window_size // 4            # overlapping for smooth predictions
 
 # Pick one representative per ancestry pair so the plot spans all pair types
+ANCESTRY_PAIRS = [
+    (3, 0),  # EUR + AFR  (like African-American)
+    (3, 2),  # EUR + EAS  (like East Asian - European)
+    (0, 2),  # AFR + EAS
+    (3, 4),  # EUR + SAS  (like South Asian - European)
+    (0, 4),  # AFR + SAS
+]
 show_indices = []
 for pop_a, pop_b in ANCESTRY_PAIRS:
     matches = np.where((parent_pops[:, 0] == pop_a) & (parent_pops[:, 1] == pop_b))[0]
