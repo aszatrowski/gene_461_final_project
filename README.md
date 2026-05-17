@@ -239,3 +239,8 @@ New best (`val_acc = 0.81`):
 * For repro:
   * save the checkpoints to the repo
   * snakemake: download data, preprocess, to HDF5, load checkpoints, forward pass, produce outputs
+
+## Remaining Todos:
+- [ ] figure out LAI test and whether it makes sense to present it
+- [ ] upload best model to project dir on Midway
+- [ ] integrate best model forward pass with snakemake

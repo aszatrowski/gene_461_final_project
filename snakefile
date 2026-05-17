@@ -10,7 +10,9 @@ rule all:
             chr=CHRS
         ),
         "data/dataset.h5",
-        "data/admixed_test.h5"
+        "data/admixed_test.h5",
+        "outputs/confusion_matrix.png",
+        "outputs/lai_karyogram.png"
 
 
 rule download_1kg:
@@ -214,12 +216,13 @@ rule evaluate_model:
     input:
         dataset    = "data/dataset.h5",
         admixed    = "data/admixed_test.h5",
-        checkpoint = "models/best_model.pt"
+        checkpoint = "models/model_a_undilated_20k.pt"
     output:
         confusion = "outputs/confusion_matrix.png",
         karyogram = "outputs/lai_karyogram.png"
     conda: "workflow/envs/ml.yaml"
     resources:
         mem_mb  = 8000,
-        runtime = 30
+        runtime = 30,
+        slurm_partition = "gpu"
     script: "scripts/evaluate.py"
