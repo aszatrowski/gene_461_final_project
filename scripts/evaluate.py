@@ -227,8 +227,13 @@ for pop_a, pop_b in ANCESTRY_PAIRS:
         show_indices.append(int(matches[0]))
 n_show = len(show_indices)
 
-fig, axes = plt.subplots(n_show, len(admixed_chrs), figsize=(5 * len(admixed_chrs), 3 * n_show),
-                         squeeze=False)
+fig, axes = plt.subplots(
+    # for future chromosomes, need to make this adaptive. 2x3 for slide convenience
+    nrows = 2,
+    ncols = 3,
+    figsize=(5 * len(admixed_chrs), 3 * n_show),
+    squeeze=False
+)
 
 for row, ind_idx in enumerate(show_indices):
     pop_a, pop_b = int(parent_pops[ind_idx, 0]), int(parent_pops[ind_idx, 1])
@@ -265,10 +270,10 @@ for row, ind_idx in enumerate(show_indices):
             ax.axvline(crossover_mb, color="black", lw=1.0, ls="--", label="crossover")
 
         ax.set_ylim(-0.05, 1.05)
-        ax.set_xlabel("Position (Mb)")
+        ax.set_xlabel(f"{chr_name} Position (Mb)")
         ax.set_ylabel("P(ancestry)")
         if col == 0:
-            ax.set_title(f"{title}\n{chr_name}", fontsize=9)
+            ax.set_title(f"{title}", fontsize=9)
         else:
             ax.set_title(chr_name, fontsize=9)
 
